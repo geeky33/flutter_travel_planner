@@ -8,7 +8,8 @@ class PlacesScreen extends StatefulWidget {
 }
 
 class _PlacesScreenState extends State<PlacesScreen> {
-  final TextEditingController searchController = TextEditingController();
+  final TextEditingController searchController =
+      TextEditingController();
 
   final List<Map<String, dynamic>> places = [
     {
@@ -51,9 +52,9 @@ class _PlacesScreenState extends State<PlacesScreen> {
     super.dispose();
   }
 
-  // ----------------------------------------------------------
+  // ==========================================================
   // ADD PLACE
-  // ----------------------------------------------------------
+  // ==========================================================
 
   void addPlace() {
     final controller = TextEditingController();
@@ -61,7 +62,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
     showDialog(
       context: context,
 
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
@@ -76,7 +77,6 @@ class _PlacesScreenState extends State<PlacesScreen> {
 
           content: TextField(
             controller: controller,
-
             autofocus: true,
 
             decoration: InputDecoration(
@@ -97,19 +97,11 @@ class _PlacesScreenState extends State<PlacesScreen> {
             ),
           ),
 
-          actionsPadding: const EdgeInsets.fromLTRB(
-            16,
-            0,
-            16,
-            16,
-          ),
-
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
               },
-
               child: const Text('Cancel'),
             ),
 
@@ -127,15 +119,14 @@ class _PlacesScreenState extends State<PlacesScreen> {
                     });
                   });
 
-                  Navigator.pop(context);
+                  Navigator.pop(dialogContext);
 
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('$name added to your trip!'),
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                      content: Text(
+                        '$name added to your trip!',
                       ),
+                      behavior: SnackBarBehavior.floating,
                     ),
                   );
                 }
@@ -154,16 +145,53 @@ class _PlacesScreenState extends State<PlacesScreen> {
     );
   }
 
-  // ----------------------------------------------------------
+  // ==========================================================
+  // DELETE
+  // ==========================================================
+
+  void deletePlace(int index) {
+    final removedPlace = places[index];
+
+    setState(() {
+      places.removeAt(index);
+    });
+
+    ScaffoldMessenger.of(context).clearSnackBars();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '${removedPlace['name']} deleted',
+        ),
+
+        behavior: SnackBarBehavior.floating,
+
+        action: SnackBarAction(
+          label: 'UNDO',
+
+          onPressed: () {
+            setState(() {
+              places.insert(index, removedPlace);
+            });
+          },
+        ),
+      ),
+    );
+  }
+
+  // ==========================================================
   // FILTER
-  // ----------------------------------------------------------
+  // ==========================================================
 
   List<Map<String, dynamic>> get filteredPlaces {
-    final searchText = searchController.text.toLowerCase();
+    final searchText =
+        searchController.text.toLowerCase();
 
     return places.where((place) {
-      final matchesSearch =
-          place['name'].toString().toLowerCase().contains(searchText);
+      final matchesSearch = place['name']
+          .toString()
+          .toLowerCase()
+          .contains(searchText);
 
       final visited = place['visited'] == true;
 
@@ -177,8 +205,14 @@ class _PlacesScreenState extends State<PlacesScreen> {
   }
 
   int get visitedCount {
-    return places.where((place) => place['visited'] == true).length;
+    return places.where(
+      (place) => place['visited'] == true,
+    ).length;
   }
+
+  // ==========================================================
+  // BUILD
+  // ==========================================================
 
   @override
   Widget build(BuildContext context) {
@@ -237,263 +271,296 @@ class _PlacesScreenState extends State<PlacesScreen> {
         ),
       ),
 
-      body: Column(
-        children: [
-          // --------------------------------------------------
-          // PROGRESS HEADER
-          // --------------------------------------------------
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth >= 700;
 
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              20,
-              5,
-              20,
-              12,
-            ),
+          return Column(
+            children: [
+              // =================================================
+              // PROGRESS
+              // =================================================
 
-            child: Container(
-              width: double.infinity,
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  isWide ? 30 : 20,
+                  5,
+                  isWide ? 30 : 20,
+                  12,
+                ),
 
-              padding: const EdgeInsets.all(18),
+                child: _progressCard(progress),
+              ),
 
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [
-                    Color(0xFF1D4ED8),
-                    Color(0xFF2563EB),
+              // =================================================
+              // SEARCH
+              // =================================================
+
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isWide ? 30 : 20,
+                ),
+
+                child: TextField(
+                  controller: searchController,
+
+                  onChanged: (_) {
+                    setState(() {});
+                  },
+
+                  decoration: InputDecoration(
+                    hintText: 'Search places...',
+
+                    prefixIcon: const Icon(
+                      Icons.search_rounded,
+                    ),
+
+                    suffixIcon:
+                        searchController.text.isNotEmpty
+                            ? IconButton(
+                                onPressed: () {
+                                  searchController.clear();
+
+                                  setState(() {});
+                                },
+                                icon: const Icon(
+                                  Icons.close_rounded,
+                                ),
+                              )
+                            : null,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // =================================================
+              // WRAP FILTERS
+              // =================================================
+
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isWide ? 30 : 20,
+                ),
+
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+
+                  children: [
+                    _filterChip('All'),
+                    _filterChip('Visited'),
+                    _filterChip('Pending'),
                   ],
                 ),
-
-                borderRadius: BorderRadius.circular(22),
-
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF2563EB)
-                        .withOpacity(0.18),
-                    blurRadius: 18,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
               ),
 
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              const SizedBox(height: 12),
 
-                children: [
-                  Row(
-                    mainAxisAlignment:
-                        MainAxisAlignment.spaceBetween,
+              // =================================================
+              // RESPONSIVE LIST
+              // =================================================
 
-                    children: [
-                      const Text(
-                        'Trip Progress',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-
-                      Text(
-                        '${(progress * 100).round()}%',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      minHeight: 9,
-
-                      backgroundColor:
-                          Colors.white.withOpacity(0.2),
-
-                      valueColor:
-                          const AlwaysStoppedAnimation<Color>(
-                        Colors.white,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 9),
-
-                  Text(
-                    '$visitedCount of ${places.length} places visited',
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
+              Expanded(
+                child: filteredPlaces.isEmpty
+                    ? _emptyState()
+                    : isWide
+                        ? _widePlacesLayout()
+                        : _mobilePlacesLayout(),
               ),
-            ),
-          ),
+            ],
+          );
+        },
+      ),
+    );
+  }
 
-          // --------------------------------------------------
-          // SEARCH
-          // --------------------------------------------------
+  // ==========================================================
+  // MOBILE LIST
+  // ==========================================================
 
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 20,
-            ),
+  Widget _mobilePlacesLayout() {
+    return ListView.builder(
+      physics: const BouncingScrollPhysics(),
 
-            child: TextField(
-              controller: searchController,
+      padding: const EdgeInsets.fromLTRB(
+        20,
+        8,
+        20,
+        100,
+      ),
 
-              onChanged: (_) {
-                setState(() {});
-              },
+      itemCount: filteredPlaces.length,
 
-              decoration: InputDecoration(
-                hintText: 'Search places...',
+      itemBuilder: (context, index) {
+        final place = filteredPlaces[index];
 
-                prefixIcon: const Icon(
-                  Icons.search_rounded,
-                ),
+        return _placeCard(
+          place,
+          places.indexOf(place),
+        );
+      },
+    );
+  }
 
-                suffixIcon: searchController.text.isNotEmpty
-                    ? IconButton(
-                        onPressed: () {
-                          searchController.clear();
-                          setState(() {});
-                        },
-                        icon: const Icon(
-                          Icons.close_rounded,
-                        ),
-                      )
-                    : null,
+  // ==========================================================
+  // TABLET / DESKTOP GRID
+  // ==========================================================
 
-                filled: true,
+  Widget _widePlacesLayout() {
+    return GridView.builder(
+      physics: const BouncingScrollPhysics(),
 
-                fillColor: Colors.white,
+      padding: const EdgeInsets.fromLTRB(
+        30,
+        8,
+        30,
+        100,
+      ),
 
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
-                ),
+      gridDelegate:
+          const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 450,
+        mainAxisSpacing: 14,
+        crossAxisSpacing: 14,
+        childAspectRatio: 2.7,
+      ),
 
-                contentPadding: const EdgeInsets.symmetric(
-                  vertical: 15,
+      itemCount: filteredPlaces.length,
+
+      itemBuilder: (context, index) {
+        final place = filteredPlaces[index];
+
+        return _placeCard(
+          place,
+          places.indexOf(place),
+        );
+      },
+    );
+  }
+
+  // ==========================================================
+  // PROGRESS CARD
+  // ==========================================================
+
+  Widget _progressCard(double progress) {
+    return Container(
+      width: double.infinity,
+
+      padding: const EdgeInsets.all(18),
+
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFF1D4ED8),
+            Color(0xFF2563EB),
+          ],
+        ),
+
+        borderRadius: BorderRadius.circular(22),
+      ),
+
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment:
+                MainAxisAlignment.spaceBetween,
+
+            children: [
+              const Text(
+                'Trip Progress',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-            ),
+
+              Text(
+                '${(progress * 100).round()}%',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
           ),
 
           const SizedBox(height: 12),
 
-          // --------------------------------------------------
-          // FILTER CHIPS
-          // --------------------------------------------------
+          ClipRRect(
+            borderRadius: BorderRadius.circular(20),
 
-          SizedBox(
-            height: 42,
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 9,
 
-            child: ListView(
-              scrollDirection: Axis.horizontal,
+              backgroundColor:
+                  Colors.white.withOpacity(0.2),
 
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
+              valueColor:
+                  const AlwaysStoppedAnimation<Color>(
+                Colors.white,
               ),
-
-              children: [
-                _filterChip('All'),
-                _filterChip('Visited'),
-                _filterChip('Pending'),
-              ],
             ),
           ),
 
           const SizedBox(height: 8),
 
-          // --------------------------------------------------
-          // PLACES LIST
-          // --------------------------------------------------
+          Align(
+            alignment: Alignment.centerLeft,
 
-          Expanded(
-            child: filteredPlaces.isEmpty
-                ? _emptyState()
-                : ListView.builder(
-                    physics:
-                        const BouncingScrollPhysics(),
+            child: Text(
+              '$visitedCount of ${places.length} places visited',
 
-                    padding: const EdgeInsets.fromLTRB(
-                      20,
-                      8,
-                      20,
-                      100,
-                    ),
-
-                    itemCount: filteredPlaces.length,
-
-                    itemBuilder: (context, index) {
-                      final place = filteredPlaces[index];
-
-                      final originalIndex =
-                          places.indexOf(place);
-
-                      return _placeCard(
-                        place,
-                        originalIndex,
-                      );
-                    },
-                  ),
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 12,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  // ----------------------------------------------------------
-  // FILTER CHIP
-  // ----------------------------------------------------------
+  // ==========================================================
+  // FILTER
+  // ==========================================================
 
   Widget _filterChip(String title) {
     final selected = selectedFilter == title;
 
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
+    return ChoiceChip(
+      label: Text(title),
 
-      child: ChoiceChip(
-        label: Text(title),
+      selected: selected,
 
-        selected: selected,
+      onSelected: (_) {
+        setState(() {
+          selectedFilter = title;
+        });
+      },
 
-        onSelected: (_) {
-          setState(() {
-            selectedFilter = title;
-          });
-        },
+      selectedColor: const Color(0xFF2563EB),
 
-        selectedColor: const Color(0xFF2563EB),
+      backgroundColor: Colors.white,
 
-        backgroundColor: Colors.white,
+      labelStyle: TextStyle(
+        color: selected
+            ? Colors.white
+            : const Color(0xFF475569),
 
-        labelStyle: TextStyle(
-          color: selected
-              ? Colors.white
-              : const Color(0xFF475569),
-
-          fontWeight: FontWeight.w600,
-        ),
-
-        side: BorderSide.none,
+        fontWeight: FontWeight.w600,
       ),
+
+      side: BorderSide.none,
     );
   }
 
-  // ----------------------------------------------------------
+  // ==========================================================
   // PLACE CARD
-  // ----------------------------------------------------------
+  // ==========================================================
 
   Widget _placeCard(
     Map<String, dynamic> place,
@@ -511,11 +578,15 @@ class _PlacesScreenState extends State<PlacesScreen> {
       direction: DismissDirection.endToStart,
 
       background: Container(
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: const EdgeInsets.only(
+          bottom: 12,
+        ),
 
         alignment: Alignment.centerRight,
 
-        padding: const EdgeInsets.only(right: 25),
+        padding: const EdgeInsets.only(
+          right: 25,
+        ),
 
         decoration: BoxDecoration(
           color: const Color(0xFFEF4444),
@@ -530,24 +601,13 @@ class _PlacesScreenState extends State<PlacesScreen> {
       ),
 
       onDismissed: (_) {
-        final removedPlace = places[index];
-
-        setState(() {
-          places.removeAt(index);
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '${removedPlace['name']} removed',
-            ),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        deletePlace(index);
       },
 
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: const EdgeInsets.only(
+          bottom: 12,
+        ),
 
         decoration: BoxDecoration(
           color: Colors.white,
@@ -567,20 +627,12 @@ class _PlacesScreenState extends State<PlacesScreen> {
 
           onChanged: (value) {
             setState(() {
-              places[index]['visited'] = value ?? false;
+              places[index]['visited'] =
+                  value ?? false;
             });
           },
 
           activeColor: const Color(0xFF10B981),
-
-          checkboxShape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(6),
-          ),
-
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 14,
-            vertical: 7,
-          ),
 
           secondary: Container(
             padding: const EdgeInsets.all(11),
@@ -601,6 +653,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
 
             style: TextStyle(
               fontWeight: FontWeight.w700,
+
               color: visited
                   ? const Color(0xFF94A3B8)
                   : const Color(0xFF0F172A),
@@ -611,22 +664,17 @@ class _PlacesScreenState extends State<PlacesScreen> {
             ),
           ),
 
-          subtitle: Padding(
-            padding: const EdgeInsets.only(top: 4),
+          subtitle: Text(
+            visited
+                ? '✓ Completed'
+                : 'Ready to explore',
 
-            child: Text(
-              visited
-                  ? '✓ Completed'
-                  : 'Ready to explore',
+            style: TextStyle(
+              color: visited
+                  ? const Color(0xFF10B981)
+                  : const Color(0xFF64748B),
 
-              style: TextStyle(
-                color: visited
-                    ? const Color(0xFF10B981)
-                    : const Color(0xFF64748B),
-
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
+              fontSize: 12,
             ),
           ),
         ),
@@ -634,55 +682,53 @@ class _PlacesScreenState extends State<PlacesScreen> {
     );
   }
 
-  // ----------------------------------------------------------
+  // ==========================================================
   // EMPTY STATE
-  // ----------------------------------------------------------
+  // ==========================================================
 
   Widget _emptyState() {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40),
+      child: Column(
+        mainAxisAlignment:
+            MainAxisAlignment.center,
 
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(22),
 
-          children: [
-            Container(
-              padding: const EdgeInsets.all(22),
-
-              decoration: BoxDecoration(
-                color: const Color(0xFFEFF4FF),
-                shape: BoxShape.circle,
-              ),
-
-              child: const Icon(
-                Icons.travel_explore_rounded,
-                size: 45,
-                color: Color(0xFF2563EB),
-              ),
+            decoration: const BoxDecoration(
+              color: Color(0xFFEFF4FF),
+              shape: BoxShape.circle,
             ),
 
-            const SizedBox(height: 18),
-
-            const Text(
-              'No places found',
-              style: TextStyle(
-                fontSize: 19,
-                fontWeight: FontWeight.w800,
-              ),
+            child: const Icon(
+              Icons.travel_explore_rounded,
+              size: 45,
+              color: Color(0xFF2563EB),
             ),
+          ),
 
-            const SizedBox(height: 6),
+          const SizedBox(height: 18),
 
-            const Text(
-              'Try another search or add a new destination.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Color(0xFF64748B),
-              ),
+          const Text(
+            'No places found',
+
+            style: TextStyle(
+              fontSize: 19,
+              fontWeight: FontWeight.w800,
             ),
-          ],
-        ),
+          ),
+
+          const SizedBox(height: 6),
+
+          const Text(
+            'Try another search or add a new destination.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Color(0xFF64748B),
+            ),
+          ),
+        ],
       ),
     );
   }

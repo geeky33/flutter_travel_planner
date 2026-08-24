@@ -5,18 +5,27 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // MEDIAQUERY
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    final isMobile = screenWidth < 600;
+    final isTablet = screenWidth >= 600 && screenWidth < 1024;
+    final isDesktop = screenWidth >= 1024;
+
     return Scaffold(
       appBar: AppBar(
         title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
+
               decoration: BoxDecoration(
                 color: const Color(0xFFE0EAFF),
                 borderRadius: BorderRadius.circular(12),
               ),
+
               child: const Icon(
-                Icons.flight_takeoff,
+                Icons.flight_takeoff_rounded,
                 color: Color(0xFF2563EB),
                 size: 22,
               ),
@@ -37,16 +46,12 @@ class HomeScreen extends StatelessWidget {
         actions: [
           Container(
             margin: const EdgeInsets.only(right: 16),
+
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(14),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                ),
-              ],
             ),
+
             child: IconButton(
               onPressed: () {},
               icon: const Icon(
@@ -58,217 +63,367 @@ class HomeScreen extends StatelessWidget {
         ],
       ),
 
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          // =================================================
+          // LAYOUTBUILDER
+          // =================================================
 
-        padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
+          if (constraints.maxWidth < 600) {
+            return _mobileLayout();
+          }
 
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          if (constraints.maxWidth < 1024) {
+            return _tabletLayout();
+          }
 
-          children: [
-            const Text(
-              'Hello, Traveler! 👋',
-              style: TextStyle(
-                fontSize: 15,
-                color: Color(0xFF64748B),
-                fontWeight: FontWeight.w500,
+          return _desktopLayout();
+        },
+      ),
+    );
+  }
+
+  // ==========================================================
+  // MOBILE LAYOUT
+  // ==========================================================
+
+  Widget _mobileLayout() {
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+
+      padding: const EdgeInsets.fromLTRB(
+        20,
+        10,
+        20,
+        30,
+      ),
+
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _welcomeSection(),
+
+          const SizedBox(height: 24),
+
+          _buildTripCard(),
+
+          const SizedBox(height: 28),
+
+          _sectionTitle(
+            'Trip Overview',
+            'Your journey at a glance',
+          ),
+
+          const SizedBox(height: 14),
+
+          // MOBILE:
+          // Cards are stacked vertically.
+          Column(
+            children: [
+              _infoCard(
+                Icons.place_rounded,
+                '5',
+                'Places',
+                const Color(0xFF2563EB),
+                const Color(0xFFEFF4FF),
               ),
-            ),
 
-            const SizedBox(height: 6),
+              const SizedBox(height: 12),
 
-            const Text(
-              'Plan your next adventure',
-              style: TextStyle(
-                fontSize: 28,
-                height: 1.15,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF0F172A),
+              _infoCard(
+                Icons.calendar_month_rounded,
+                '4',
+                'Days',
+                const Color(0xFF8B5CF6),
+                const Color(0xFFF3EEFF),
               ),
-            ),
 
-            const SizedBox(height: 8),
+              const SizedBox(height: 12),
 
-            const Text(
-              'Everything you need for your journey, in one place.',
-              style: TextStyle(
-                fontSize: 14,
-                color: Color(0xFF64748B),
+              _infoCard(
+                Icons.check_circle_rounded,
+                '2',
+                'Visited',
+                const Color(0xFF10B981),
+                const Color(0xFFE9FBF4),
               ),
-            ),
+            ],
+          ),
 
-            const SizedBox(height: 24),
+          const SizedBox(height: 28),
 
-            // HERO TRIP CARD
-            _buildTripCard(),
+          _upcomingSection(),
 
-            const SizedBox(height: 28),
+          const SizedBox(height: 25),
 
-            // SECTION TITLE
-            _sectionTitle(
-              'Trip Overview',
-              'Your journey at a glance',
-            ),
+          _travelTip(),
+        ],
+      ),
+    );
+  }
 
-            const SizedBox(height: 14),
+  // ==========================================================
+  // TABLET LAYOUT
+  // ==========================================================
 
-            // ROW
-            Row(
-              children: [
-                Expanded(
-                  child: _infoCard(
-                    icon: Icons.place_rounded,
-                    value: '5',
-                    title: 'Places',
-                    color: const Color(0xFF2563EB),
-                    background: const Color(0xFFEFF4FF),
-                  ),
-                ),
+  Widget _tabletLayout() {
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
 
-                const SizedBox(width: 12),
+      padding: const EdgeInsets.all(28),
 
-                Expanded(
-                  child: _infoCard(
-                    icon: Icons.calendar_month_rounded,
-                    value: '4',
-                    title: 'Days',
-                    color: const Color(0xFF8B5CF6),
-                    background: const Color(0xFFF3EEFF),
-                  ),
-                ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _welcomeSection(),
 
-                const SizedBox(width: 12),
+          const SizedBox(height: 25),
 
-                Expanded(
-                  child: _infoCard(
-                    icon: Icons.check_circle_rounded,
-                    value: '2',
-                    title: 'Visited',
-                    color: const Color(0xFF10B981),
-                    background: const Color(0xFFE9FBF4),
-                  ),
-                ),
-              ],
-            ),
+          _buildTripCard(),
 
-            const SizedBox(height: 28),
+          const SizedBox(height: 28),
 
-            _sectionTitle(
-              'Upcoming',
-              'Your next destinations',
-            ),
+          _sectionTitle(
+            'Trip Overview',
+            'Your journey at a glance',
+          ),
 
-            const SizedBox(height: 14),
+          const SizedBox(height: 14),
 
-            _placeCard(
-              name: 'Baga Beach',
-              time: 'Day 1 • 10:00 AM',
-              icon: Icons.beach_access_rounded,
-              color: const Color(0xFF0EA5E9),
-            ),
-
-            const SizedBox(height: 10),
-
-            _placeCard(
-              name: 'Fort Aguada',
-              time: 'Day 2 • 11:00 AM',
-              icon: Icons.castle_rounded,
-              color: const Color(0xFF8B5CF6),
-            ),
-
-            const SizedBox(height: 10),
-
-            _placeCard(
-              name: 'Dudhsagar Falls',
-              time: 'Day 3 • 9:00 AM',
-              icon: Icons.water_drop_rounded,
-              color: const Color(0xFF10B981),
-            ),
-
-            const SizedBox(height: 28),
-
-            // TRAVEL TIP
-            Container(
-              width: double.infinity,
-
-              padding: const EdgeInsets.all(18),
-
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [
-                    Color(0xFFFFF7ED),
-                    Color(0xFFFFF1E6),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-
-                borderRadius: BorderRadius.circular(20),
-
-                border: Border.all(
-                  color: const Color(0xFFFED7AA),
+          // RESPONSIVE ROW
+          Row(
+            children: [
+              Expanded(
+                child: _infoCard(
+                  Icons.place_rounded,
+                  '5',
+                  'Places',
+                  const Color(0xFF2563EB),
+                  const Color(0xFFEFF4FF),
                 ),
               ),
 
-              child: Row(
+              const SizedBox(width: 15),
+
+              Expanded(
+                child: _infoCard(
+                  Icons.calendar_month_rounded,
+                  '4',
+                  'Days',
+                  const Color(0xFF8B5CF6),
+                  const Color(0xFFF3EEFF),
+                ),
+              ),
+
+              const SizedBox(width: 15),
+
+              Expanded(
+                child: _infoCard(
+                  Icons.check_circle_rounded,
+                  '2',
+                  'Visited',
+                  const Color(0xFF10B981),
+                  const Color(0xFFE9FBF4),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 30),
+
+          _upcomingSection(),
+
+          const SizedBox(height: 25),
+
+          _travelTip(),
+        ],
+      ),
+    );
+  }
+
+  // ==========================================================
+  // DESKTOP LAYOUT
+  // ==========================================================
+
+  Widget _desktopLayout() {
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+
+      padding: const EdgeInsets.symmetric(
+        horizontal: 45,
+        vertical: 25,
+      ),
+
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxWidth: 1250,
+          ),
+
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _welcomeSection(),
+
+              const SizedBox(height: 25),
+
+              // DESKTOP:
+              // Trip card and statistics side-by-side.
+              Row(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(11),
-
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-
-                    child: const Icon(
-                      Icons.lightbulb_rounded,
-                      color: Color(0xFFF97316),
-                    ),
+                  // FLEXIBLE
+                  Flexible(
+                    flex: 2,
+                    child: _buildTripCard(),
                   ),
 
-                  const SizedBox(width: 14),
+                  const SizedBox(width: 20),
 
-                  const Expanded(
+                  // EXPANDED
+                  Expanded(
+                    flex: 1,
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Travel Tip',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF9A3412),
-                          ),
+                        _infoCard(
+                          Icons.place_rounded,
+                          '5',
+                          'Places',
+                          const Color(0xFF2563EB),
+                          const Color(0xFFEFF4FF),
                         ),
 
-                        SizedBox(height: 4),
+                        const SizedBox(height: 12),
 
-                        Text(
-                          'Keep some extra time between destinations for unexpected delays.',
-                          style: TextStyle(
-                            fontSize: 13,
-                            height: 1.4,
-                            color: Color(0xFF7C2D12),
-                          ),
+                        _infoCard(
+                          Icons.calendar_month_rounded,
+                          '4',
+                          'Days',
+                          const Color(0xFF8B5CF6),
+                          const Color(0xFFF3EEFF),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        _infoCard(
+                          Icons.check_circle_rounded,
+                          '2',
+                          'Visited',
+                          const Color(0xFF10B981),
+                          const Color(0xFFE9FBF4),
                         ),
                       ],
                     ),
                   ),
                 ],
               ),
-            ),
-          ],
+
+              const SizedBox(height: 35),
+
+              _sectionTitle(
+                'Upcoming',
+                'Your next destinations',
+              ),
+
+              const SizedBox(height: 15),
+
+              // WRAP
+              Wrap(
+                spacing: 15,
+                runSpacing: 15,
+
+                children: [
+                  SizedBox(
+                    width: 380,
+                    child: _placeCard(
+                      'Baga Beach',
+                      'Day 1 • 10:00 AM',
+                      Icons.beach_access_rounded,
+                      const Color(0xFF0EA5E9),
+                    ),
+                  ),
+
+                  SizedBox(
+                    width: 380,
+                    child: _placeCard(
+                      'Fort Aguada',
+                      'Day 2 • 11:00 AM',
+                      Icons.castle_rounded,
+                      const Color(0xFF8B5CF6),
+                    ),
+                  ),
+
+                  SizedBox(
+                    width: 380,
+                    child: _placeCard(
+                      'Dudhsagar Falls',
+                      'Day 3 • 9:00 AM',
+                      Icons.water_drop_rounded,
+                      const Color(0xFF10B981),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 25),
+
+              _travelTip(),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // ----------------------------------------------------------
-  // HERO TRIP CARD
-  // ----------------------------------------------------------
+  // ==========================================================
+  // WELCOME
+  // ==========================================================
 
-  static Widget _buildTripCard() {
+  Widget _welcomeSection() {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Hello, Traveler! 👋',
+          style: TextStyle(
+            fontSize: 15,
+            color: Color(0xFF64748B),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+
+        SizedBox(height: 6),
+
+        Text(
+          'Plan your next adventure',
+          style: TextStyle(
+            fontSize: 28,
+            height: 1.15,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF0F172A),
+          ),
+        ),
+
+        SizedBox(height: 8),
+
+        Text(
+          'Everything you need for your journey, in one place.',
+          style: TextStyle(
+            fontSize: 14,
+            color: Color(0xFF64748B),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ==========================================================
+  // TRIP CARD
+  // ==========================================================
+
+  Widget _buildTripCard() {
     return Container(
       width: double.infinity,
       height: 220,
@@ -289,7 +444,8 @@ class HomeScreen extends StatelessWidget {
 
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2563EB).withOpacity(0.25),
+            color: const Color(0xFF2563EB)
+                .withOpacity(0.25),
             blurRadius: 25,
             offset: const Offset(0, 12),
           ),
@@ -298,7 +454,6 @@ class HomeScreen extends StatelessWidget {
 
       child: Stack(
         children: [
-          // Decorative circle
           Positioned(
             right: -40,
             top: -40,
@@ -314,56 +469,48 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
 
-          Positioned(
-            right: 30,
-            bottom: -60,
-
-            child: Container(
-              width: 140,
-              height: 140,
-
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.06),
-              ),
-            ),
-          ),
-
           Padding(
             padding: const EdgeInsets.all(22),
 
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
 
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment:
+                      MainAxisAlignment.spaceBetween,
 
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(10),
+                      padding:
+                          const EdgeInsets.all(10),
 
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.18),
-                        borderRadius: BorderRadius.circular(14),
+                        color:
+                            Colors.white.withOpacity(0.18),
+                        borderRadius:
+                            BorderRadius.circular(14),
                       ),
 
                       child: const Icon(
                         Icons.flight_takeoff_rounded,
                         color: Colors.white,
-                        size: 25,
                       ),
                     ),
 
                     Container(
-                      padding: const EdgeInsets.symmetric(
+                      padding:
+                          const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 7,
                       ),
 
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(20),
+                        color:
+                            Colors.white.withOpacity(0.15),
+                        borderRadius:
+                            BorderRadius.circular(20),
                       ),
 
                       child: const Text(
@@ -372,7 +519,6 @@ class HomeScreen extends StatelessWidget {
                           color: Colors.white,
                           fontSize: 10,
                           fontWeight: FontWeight.w800,
-                          letterSpacing: 1,
                         ),
                       ),
                     ),
@@ -387,7 +533,6 @@ class HomeScreen extends StatelessWidget {
                     color: Colors.white70,
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: 1.2,
                   ),
                 ),
 
@@ -404,24 +549,12 @@ class HomeScreen extends StatelessWidget {
 
                 const SizedBox(height: 5),
 
-                const Row(
-                  children: [
-                    Icon(
-                      Icons.calendar_today_rounded,
-                      color: Colors.white70,
-                      size: 14,
-                    ),
-
-                    SizedBox(width: 7),
-
-                    Text(
-                      '15 Aug - 19 Aug 2026',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
+                const Text(
+                  '15 Aug - 19 Aug 2026',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                  ),
                 ),
               ],
             ),
@@ -431,11 +564,207 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // ----------------------------------------------------------
-  // SECTION TITLE
-  // ----------------------------------------------------------
+  // ==========================================================
+  // INFO CARD
+  // ==========================================================
 
-  static Widget _sectionTitle(
+  Widget _infoCard(
+    IconData icon,
+    String value,
+    String title,
+    Color color,
+    Color background,
+  ) {
+    return Container(
+      width: double.infinity,
+
+      padding: const EdgeInsets.symmetric(
+        vertical: 18,
+        horizontal: 10,
+      ),
+
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(9),
+
+            decoration: BoxDecoration(
+              color: background,
+              borderRadius: BorderRadius.circular(12),
+            ),
+
+            child: Icon(
+              icon,
+              color: color,
+            ),
+          ),
+
+          const SizedBox(width: 12),
+
+          Flexible(
+            child: Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+
+              children: [
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 21,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Color(0xFF64748B),
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ==========================================================
+  // UPCOMING
+  // ==========================================================
+
+  Widget _upcomingSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+
+      children: [
+        _sectionTitle(
+          'Upcoming',
+          'Your next destinations',
+        ),
+
+        const SizedBox(height: 14),
+
+        _placeCard(
+          'Baga Beach',
+          'Day 1 • 10:00 AM',
+          Icons.beach_access_rounded,
+          const Color(0xFF0EA5E9),
+        ),
+
+        const SizedBox(height: 10),
+
+        _placeCard(
+          'Fort Aguada',
+          'Day 2 • 11:00 AM',
+          Icons.castle_rounded,
+          const Color(0xFF8B5CF6),
+        ),
+
+        const SizedBox(height: 10),
+
+        _placeCard(
+          'Dudhsagar Falls',
+          'Day 3 • 9:00 AM',
+          Icons.water_drop_rounded,
+          const Color(0xFF10B981),
+        ),
+      ],
+    );
+  }
+
+  // ==========================================================
+  // PLACE CARD
+  // ==========================================================
+
+  Widget _placeCard(
+    String name,
+    String time,
+    IconData icon,
+    Color color,
+  ) {
+    return Container(
+      width: double.infinity,
+
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.035),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+
+      child: ListTile(
+        contentPadding:
+            const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 6,
+        ),
+
+        leading: Container(
+          padding: const EdgeInsets.all(11),
+
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(14),
+          ),
+
+          child: Icon(
+            icon,
+            color: color,
+          ),
+        ),
+
+        title: Text(
+          name,
+          style: const TextStyle(
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF0F172A),
+          ),
+        ),
+
+        subtitle: Text(
+          time,
+          style: const TextStyle(
+            fontSize: 12,
+            color: Color(0xFF64748B),
+          ),
+        ),
+
+        trailing: const Icon(
+          Icons.arrow_forward_ios_rounded,
+          size: 14,
+          color: Color(0xFF64748B),
+        ),
+      ),
+    );
+  }
+
+  // ==========================================================
+  // SECTION TITLE
+  // ==========================================================
+
+  Widget _sectionTitle(
     String title,
     String subtitle,
   ) {
@@ -465,156 +794,43 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // ----------------------------------------------------------
-  // INFO CARD
-  // ----------------------------------------------------------
+  // ==========================================================
+  // TRAVEL TIP
+  // ==========================================================
 
-  static Widget _infoCard({
-    required IconData icon,
-    required String value,
-    required String title,
-    required Color color,
-    required Color background,
-  }) {
+  Widget _travelTip() {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        vertical: 17,
-        horizontal: 8,
-      ),
+      width: double.infinity,
+
+      padding: const EdgeInsets.all(18),
 
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFFFFF7ED),
         borderRadius: BorderRadius.circular(20),
-
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 5),
-          ),
-        ],
+        border: Border.all(
+          color: const Color(0xFFFED7AA),
+        ),
       ),
 
-      child: Column(
+      child: const Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(9),
-
-            decoration: BoxDecoration(
-              color: background,
-              borderRadius: BorderRadius.circular(12),
-            ),
-
-            child: Icon(
-              icon,
-              color: color,
-              size: 21,
-            ),
+          Icon(
+            Icons.lightbulb_rounded,
+            color: Color(0xFFF97316),
           ),
 
-          const SizedBox(height: 9),
+          SizedBox(width: 14),
 
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 21,
-              fontWeight: FontWeight.w800,
-              color: Color(0xFF0F172A),
-            ),
-          ),
-
-          const SizedBox(height: 2),
-
-          Text(
-            title,
-            style: const TextStyle(
-              color: Color(0xFF64748B),
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
+          Expanded(
+            child: Text(
+              'Keep some extra time between destinations for unexpected delays.',
+              style: TextStyle(
+                color: Color(0xFF7C2D12),
+                fontSize: 13,
+              ),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  // ----------------------------------------------------------
-  // PLACE CARD
-  // ----------------------------------------------------------
-
-  static Widget _placeCard({
-    required String name,
-    required String time,
-    required IconData icon,
-    required Color color,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.035),
-            blurRadius: 12,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 6,
-        ),
-
-        leading: Container(
-          padding: const EdgeInsets.all(11),
-
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(14),
-          ),
-
-          child: Icon(
-            icon,
-            color: color,
-          ),
-        ),
-
-        title: Text(
-          name,
-          style: const TextStyle(
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF0F172A),
-          ),
-        ),
-
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: Text(
-            time,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Color(0xFF64748B),
-            ),
-          ),
-        ),
-
-        trailing: Container(
-          padding: const EdgeInsets.all(8),
-
-          decoration: BoxDecoration(
-            color: const Color(0xFFF1F5F9),
-            borderRadius: BorderRadius.circular(10),
-          ),
-
-          child: const Icon(
-            Icons.arrow_forward_ios_rounded,
-            size: 13,
-            color: Color(0xFF64748B),
-          ),
-        ),
       ),
     );
   }
