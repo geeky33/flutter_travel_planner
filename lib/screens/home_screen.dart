@@ -5,13 +5,6 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // MEDIAQUERY
-    final screenWidth = MediaQuery.of(context).size.width;
-
-    final isMobile = screenWidth < 600;
-    final isTablet = screenWidth >= 600 && screenWidth < 1024;
-    final isDesktop = screenWidth >= 1024;
-
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -21,7 +14,8 @@ class HomeScreen extends StatelessWidget {
 
               decoration: BoxDecoration(
                 color: const Color(0xFFE0EAFF),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius:
+                    BorderRadius.circular(12),
               ),
 
               child: const Icon(
@@ -45,15 +39,18 @@ class HomeScreen extends StatelessWidget {
 
         actions: [
           Container(
-            margin: const EdgeInsets.only(right: 16),
+            margin:
+                const EdgeInsets.only(right: 16),
 
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius:
+                  BorderRadius.circular(14),
             ),
 
             child: IconButton(
               onPressed: () {},
+
               icon: const Icon(
                 Icons.notifications_none_rounded,
                 color: Color(0xFF0F172A),
@@ -65,10 +62,6 @@ class HomeScreen extends StatelessWidget {
 
       body: LayoutBuilder(
         builder: (context, constraints) {
-          // =================================================
-          // LAYOUTBUILDER
-          // =================================================
-
           if (constraints.maxWidth < 600) {
             return _mobileLayout();
           }
@@ -84,13 +77,11 @@ class HomeScreen extends StatelessWidget {
   }
 
   // ==========================================================
-  // MOBILE LAYOUT
+  // MOBILE
   // ==========================================================
 
   Widget _mobileLayout() {
     return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-
       padding: const EdgeInsets.fromLTRB(
         20,
         10,
@@ -99,13 +90,15 @@ class HomeScreen extends StatelessWidget {
       ),
 
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+
         children: [
-          _welcomeSection(),
+          _welcome(),
 
           const SizedBox(height: 24),
 
-          _buildTripCard(),
+          _tripCard(),
 
           const SizedBox(height: 28),
 
@@ -116,11 +109,9 @@ class HomeScreen extends StatelessWidget {
 
           const SizedBox(height: 14),
 
-          // MOBILE:
-          // Cards are stacked vertically.
           Column(
             children: [
-              _infoCard(
+              _statCard(
                 Icons.place_rounded,
                 '5',
                 'Places',
@@ -130,7 +121,7 @@ class HomeScreen extends StatelessWidget {
 
               const SizedBox(height: 12),
 
-              _infoCard(
+              _statCard(
                 Icons.calendar_month_rounded,
                 '4',
                 'Days',
@@ -140,7 +131,7 @@ class HomeScreen extends StatelessWidget {
 
               const SizedBox(height: 12),
 
-              _infoCard(
+              _statCard(
                 Icons.check_circle_rounded,
                 '2',
                 'Visited',
@@ -152,7 +143,7 @@ class HomeScreen extends StatelessWidget {
 
           const SizedBox(height: 28),
 
-          _upcomingSection(),
+          _upcoming(),
 
           const SizedBox(height: 25),
 
@@ -163,23 +154,23 @@ class HomeScreen extends StatelessWidget {
   }
 
   // ==========================================================
-  // TABLET LAYOUT
+  // TABLET
   // ==========================================================
 
   Widget _tabletLayout() {
     return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-
       padding: const EdgeInsets.all(28),
 
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+
         children: [
-          _welcomeSection(),
+          _welcome(),
 
           const SizedBox(height: 25),
 
-          _buildTripCard(),
+          _tripCard(),
 
           const SizedBox(height: 28),
 
@@ -190,11 +181,10 @@ class HomeScreen extends StatelessWidget {
 
           const SizedBox(height: 14),
 
-          // RESPONSIVE ROW
           Row(
             children: [
               Expanded(
-                child: _infoCard(
+                child: _statCard(
                   Icons.place_rounded,
                   '5',
                   'Places',
@@ -206,7 +196,7 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(width: 15),
 
               Expanded(
-                child: _infoCard(
+                child: _statCard(
                   Icons.calendar_month_rounded,
                   '4',
                   'Days',
@@ -218,7 +208,7 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(width: 15),
 
               Expanded(
-                child: _infoCard(
+                child: _statCard(
                   Icons.check_circle_rounded,
                   '2',
                   'Visited',
@@ -231,7 +221,7 @@ class HomeScreen extends StatelessWidget {
 
           const SizedBox(height: 30),
 
-          _upcomingSection(),
+          _upcoming(),
 
           const SizedBox(height: 25),
 
@@ -242,13 +232,11 @@ class HomeScreen extends StatelessWidget {
   }
 
   // ==========================================================
-  // DESKTOP LAYOUT
+  // DESKTOP
   // ==========================================================
 
   Widget _desktopLayout() {
     return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-
       padding: const EdgeInsets.symmetric(
         horizontal: 45,
         vertical: 25,
@@ -256,38 +244,38 @@ class HomeScreen extends StatelessWidget {
 
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(
+          constraints:
+              const BoxConstraints(
             maxWidth: 1250,
           ),
 
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
+
             children: [
-              _welcomeSection(),
+              _welcome(),
 
               const SizedBox(height: 25),
 
-              // DESKTOP:
-              // Trip card and statistics side-by-side.
               Row(
                 crossAxisAlignment:
                     CrossAxisAlignment.start,
 
                 children: [
-                  // FLEXIBLE
                   Flexible(
                     flex: 2,
-                    child: _buildTripCard(),
+                    child: _tripCard(),
                   ),
 
                   const SizedBox(width: 20),
 
-                  // EXPANDED
                   Expanded(
                     flex: 1,
+
                     child: Column(
                       children: [
-                        _infoCard(
+                        _statCard(
                           Icons.place_rounded,
                           '5',
                           'Places',
@@ -297,7 +285,7 @@ class HomeScreen extends StatelessWidget {
 
                         const SizedBox(height: 12),
 
-                        _infoCard(
+                        _statCard(
                           Icons.calendar_month_rounded,
                           '4',
                           'Days',
@@ -307,7 +295,7 @@ class HomeScreen extends StatelessWidget {
 
                         const SizedBox(height: 12),
 
-                        _infoCard(
+                        _statCard(
                           Icons.check_circle_rounded,
                           '2',
                           'Visited',
@@ -329,7 +317,6 @@ class HomeScreen extends StatelessWidget {
 
               const SizedBox(height: 15),
 
-              // WRAP
               Wrap(
                 spacing: 15,
                 runSpacing: 15,
@@ -381,12 +368,15 @@ class HomeScreen extends StatelessWidget {
   // WELCOME
   // ==========================================================
 
-  Widget _welcomeSection() {
+  Widget _welcome() {
     return const Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
+
       children: [
         Text(
           'Hello, Traveler! 👋',
+
           style: TextStyle(
             fontSize: 15,
             color: Color(0xFF64748B),
@@ -398,6 +388,7 @@ class HomeScreen extends StatelessWidget {
 
         Text(
           'Plan your next adventure',
+
           style: TextStyle(
             fontSize: 28,
             height: 1.15,
@@ -410,6 +401,7 @@ class HomeScreen extends StatelessWidget {
 
         Text(
           'Everything you need for your journey, in one place.',
+
           style: TextStyle(
             fontSize: 14,
             color: Color(0xFF64748B),
@@ -423,7 +415,7 @@ class HomeScreen extends StatelessWidget {
   // TRIP CARD
   // ==========================================================
 
-  Widget _buildTripCard() {
+  Widget _tripCard() {
     return Container(
       width: double.infinity,
       height: 220,
@@ -435,18 +427,18 @@ class HomeScreen extends StatelessWidget {
             Color(0xFF2563EB),
             Color(0xFF0EA5E9),
           ],
-
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
         ),
 
-        borderRadius: BorderRadius.circular(28),
+        borderRadius:
+            BorderRadius.circular(28),
 
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF2563EB)
-                .withOpacity(0.25),
+                .withValues(alpha: 0.25),
+
             blurRadius: 25,
+
             offset: const Offset(0, 12),
           ),
         ],
@@ -462,9 +454,13 @@ class HomeScreen extends StatelessWidget {
               width: 150,
               height: 150,
 
-              decoration: BoxDecoration(
+              decoration:
+                  BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.08),
+                color:
+                    Colors.white.withOpacity(
+                  0.08,
+                ),
               ),
             ),
           ),
@@ -486,11 +482,17 @@ class HomeScreen extends StatelessWidget {
                       padding:
                           const EdgeInsets.all(10),
 
-                      decoration: BoxDecoration(
+                      decoration:
+                          BoxDecoration(
                         color:
-                            Colors.white.withOpacity(0.18),
+                            Colors.white.withOpacity(
+                          0.18,
+                        ),
+
                         borderRadius:
-                            BorderRadius.circular(14),
+                            BorderRadius.circular(
+                          14,
+                        ),
                       ),
 
                       child: const Icon(
@@ -506,19 +508,27 @@ class HomeScreen extends StatelessWidget {
                         vertical: 7,
                       ),
 
-                      decoration: BoxDecoration(
+                      decoration:
+                          BoxDecoration(
                         color:
-                            Colors.white.withOpacity(0.15),
+                            Colors.white.withOpacity(
+                          0.15,
+                        ),
+
                         borderRadius:
-                            BorderRadius.circular(20),
+                            BorderRadius.circular(
+                          20,
+                        ),
                       ),
 
                       child: const Text(
                         'UPCOMING',
+
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 10,
-                          fontWeight: FontWeight.w800,
+                          fontWeight:
+                              FontWeight.w800,
                         ),
                       ),
                     ),
@@ -529,10 +539,12 @@ class HomeScreen extends StatelessWidget {
 
                 const Text(
                   'MY NEXT TRIP',
+
                   style: TextStyle(
                     color: Colors.white70,
                     fontSize: 11,
-                    fontWeight: FontWeight.w700,
+                    fontWeight:
+                        FontWeight.w700,
                   ),
                 ),
 
@@ -540,10 +552,12 @@ class HomeScreen extends StatelessWidget {
 
                 const Text(
                   'Goa, India 🌴',
+
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 27,
-                    fontWeight: FontWeight.w800,
+                    fontWeight:
+                        FontWeight.w800,
                   ),
                 ),
 
@@ -551,6 +565,7 @@ class HomeScreen extends StatelessWidget {
 
                 const Text(
                   '15 Aug - 19 Aug 2026',
+
                   style: TextStyle(
                     color: Colors.white70,
                     fontSize: 13,
@@ -565,10 +580,10 @@ class HomeScreen extends StatelessWidget {
   }
 
   // ==========================================================
-  // INFO CARD
+  // STAT CARD
   // ==========================================================
 
-  Widget _infoCard(
+  Widget _statCard(
     IconData icon,
     String value,
     String title,
@@ -578,19 +593,25 @@ class HomeScreen extends StatelessWidget {
     return Container(
       width: double.infinity,
 
-      padding: const EdgeInsets.symmetric(
+      padding:
+          const EdgeInsets.symmetric(
         vertical: 18,
         horizontal: 10,
       ),
 
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+
+        borderRadius:
+            BorderRadius.circular(20),
 
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color:
+                Colors.black.withValues(alpha: 0.04),
+
             blurRadius: 12,
+
             offset: const Offset(0, 5),
           ),
         ],
@@ -599,11 +620,13 @@ class HomeScreen extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(9),
+            padding:
+                const EdgeInsets.all(9),
 
             decoration: BoxDecoration(
               color: background,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius:
+                  BorderRadius.circular(12),
             ),
 
             child: Icon(
@@ -622,17 +645,22 @@ class HomeScreen extends StatelessWidget {
               children: [
                 Text(
                   value,
+
                   style: const TextStyle(
                     fontSize: 21,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF0F172A),
+                    fontWeight:
+                        FontWeight.w800,
+                    color:
+                        Color(0xFF0F172A),
                   ),
                 ),
 
                 Text(
                   title,
+
                   style: const TextStyle(
-                    color: Color(0xFF64748B),
+                    color:
+                        Color(0xFF64748B),
                     fontSize: 11,
                   ),
                 ),
@@ -648,9 +676,10 @@ class HomeScreen extends StatelessWidget {
   // UPCOMING
   // ==========================================================
 
-  Widget _upcomingSection() {
+  Widget _upcoming() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
 
       children: [
         _sectionTitle(
@@ -688,10 +717,6 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // ==========================================================
-  // PLACE CARD
-  // ==========================================================
-
   Widget _placeCard(
     String name,
     String time,
@@ -703,12 +728,17 @@ class HomeScreen extends StatelessWidget {
 
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+
+        borderRadius:
+            BorderRadius.circular(18),
 
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.035),
+            color:
+                Colors.black.withValues(alpha: 0.035),
+
             blurRadius: 12,
+
             offset: const Offset(0, 5),
           ),
         ],
@@ -722,11 +752,15 @@ class HomeScreen extends StatelessWidget {
         ),
 
         leading: Container(
-          padding: const EdgeInsets.all(11),
+          padding:
+              const EdgeInsets.all(11),
 
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(14),
+            color:
+                color.withValues(alpha: 0.1),
+
+            borderRadius:
+                BorderRadius.circular(14),
           ),
 
           child: Icon(
@@ -737,17 +771,22 @@ class HomeScreen extends StatelessWidget {
 
         title: Text(
           name,
+
           style: const TextStyle(
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF0F172A),
+            fontWeight:
+                FontWeight.w700,
+            color:
+                Color(0xFF0F172A),
           ),
         ),
 
         subtitle: Text(
           time,
+
           style: const TextStyle(
             fontSize: 12,
-            color: Color(0xFF64748B),
+            color:
+                Color(0xFF64748B),
           ),
         ),
 
@@ -769,15 +808,19 @@ class HomeScreen extends StatelessWidget {
     String subtitle,
   ) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
 
       children: [
         Text(
           title,
+
           style: const TextStyle(
             fontSize: 20,
-            fontWeight: FontWeight.w800,
-            color: Color(0xFF0F172A),
+            fontWeight:
+                FontWeight.w800,
+            color:
+                Color(0xFF0F172A),
           ),
         ),
 
@@ -785,9 +828,11 @@ class HomeScreen extends StatelessWidget {
 
         Text(
           subtitle,
+
           style: const TextStyle(
             fontSize: 12,
-            color: Color(0xFF94A3B8),
+            color:
+                Color(0xFF94A3B8),
           ),
         ),
       ],
@@ -802,13 +847,19 @@ class HomeScreen extends StatelessWidget {
     return Container(
       width: double.infinity,
 
-      padding: const EdgeInsets.all(18),
+      padding:
+          const EdgeInsets.all(18),
 
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF7ED),
-        borderRadius: BorderRadius.circular(20),
+        color:
+            const Color(0xFFFFF7ED),
+
+        borderRadius:
+            BorderRadius.circular(20),
+
         border: Border.all(
-          color: const Color(0xFFFED7AA),
+          color:
+              const Color(0xFFFED7AA),
         ),
       ),
 
@@ -824,8 +875,10 @@ class HomeScreen extends StatelessWidget {
           Expanded(
             child: Text(
               'Keep some extra time between destinations for unexpected delays.',
+
               style: TextStyle(
-                color: Color(0xFF7C2D12),
+                color:
+                    Color(0xFF7C2D12),
                 fontSize: 13,
               ),
             ),

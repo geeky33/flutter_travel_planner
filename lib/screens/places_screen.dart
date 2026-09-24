@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../data/trip_data.dart';
 
 class PlacesScreen extends StatefulWidget {
   const PlacesScreen({super.key});
@@ -11,43 +12,25 @@ class _PlacesScreenState extends State<PlacesScreen> {
   final TextEditingController searchController =
       TextEditingController();
 
-  final List<Map<String, dynamic>> places = [
-    {
-      'name': 'Baga Beach',
-      'visited': true,
-      'icon': Icons.beach_access_rounded,
-      'color': Colors.orange,
-    },
-    {
-      'name': 'Fort Aguada',
-      'visited': false,
-      'icon': Icons.castle_rounded,
-      'color': Colors.deepPurple,
-    },
-    {
-      'name': 'Dudhsagar Falls',
-      'visited': false,
-      'icon': Icons.water_drop_rounded,
-      'color': Colors.blue,
-    },
-    {
-      'name': 'Basilica of Bom Jesus',
-      'visited': false,
-      'icon': Icons.account_balance_rounded,
-      'color': Colors.green,
-    },
-    {
-      'name': 'Palolem Beach',
-      'visited': false,
-      'icon': Icons.waves_rounded,
-      'color': Colors.teal,
-    },
-  ];
+  final TripData tripData = TripData.instance;
 
   String selectedFilter = 'All';
 
   @override
+  void initState() {
+    super.initState();
+    tripData.addListener(_onTripDataChanged);
+  }
+
+  void _onTripDataChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
   void dispose() {
+    tripData.removeListener(_onTripDataChanged);
     searchController.dispose();
     super.dispose();
   }
@@ -61,42 +44,33 @@ class _PlacesScreenState extends State<PlacesScreen> {
 
     showDialog(
       context: context,
-
       builder: (dialogContext) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
           ),
-
           title: const Text(
             'Add a new place',
             style: TextStyle(
               fontWeight: FontWeight.w800,
             ),
           ),
-
           content: TextField(
             controller: controller,
             autofocus: true,
-
             decoration: InputDecoration(
               hintText: 'e.g. Candolim Beach',
-
               prefixIcon: const Icon(
                 Icons.location_on_outlined,
               ),
-
               filled: true,
-
               fillColor: const Color(0xFFF1F5F9),
-
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(15),
                 borderSide: BorderSide.none,
               ),
             ),
           ),
-
           actions: [
             TextButton(
               onPressed: () {
@@ -104,20 +78,12 @@ class _PlacesScreenState extends State<PlacesScreen> {
               },
               child: const Text('Cancel'),
             ),
-
             ElevatedButton(
               onPressed: () {
                 final name = controller.text.trim();
 
                 if (name.isNotEmpty) {
-                  setState(() {
-                    places.add({
-                      'name': name,
-                      'visited': false,
-                      'icon': Icons.place_rounded,
-                      'color': Colors.blue,
-                    });
-                  });
+                  tripData.addPlace(name);
 
                   Navigator.pop(dialogContext);
 
@@ -131,12 +97,10 @@ class _PlacesScreenState extends State<PlacesScreen> {
                   );
                 }
               },
-
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF2563EB),
                 foregroundColor: Colors.white,
               ),
-
               child: const Text('Add Place'),
             ),
           ],
@@ -150,29 +114,22 @@ class _PlacesScreenState extends State<PlacesScreen> {
   // ==========================================================
 
   void deletePlace(int index) {
-    final removedPlace = places[index];
+    final removedPlace = tripData.places[index];
 
-    setState(() {
-      places.removeAt(index);
-    });
+    tripData.removePlace(index);
 
     ScaffoldMessenger.of(context).clearSnackBars();
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          '${removedPlace['name']} deleted',
+          '${removedPlace.name} deleted',
         ),
-
         behavior: SnackBarBehavior.floating,
-
         action: SnackBarAction(
           label: 'UNDO',
-
           onPressed: () {
-            setState(() {
-              places.insert(index, removedPlace);
-            });
+            tripData.restorePlace(index, removedPlace);
           },
         ),
       ),
@@ -183,31 +140,22 @@ class _PlacesScreenState extends State<PlacesScreen> {
   // FILTER
   // ==========================================================
 
-  List<Map<String, dynamic>> get filteredPlaces {
+  List<TripPlace> get filteredPlaces {
     final searchText =
         searchController.text.toLowerCase();
 
-    return places.where((place) {
-      final matchesSearch = place['name']
-          .toString()
+    return tripData.places.where((place) {
+      final matchesSearch = place.name
           .toLowerCase()
           .contains(searchText);
 
-      final visited = place['visited'] == true;
-
       final matchesFilter =
           selectedFilter == 'All' ||
-          (selectedFilter == 'Visited' && visited) ||
-          (selectedFilter == 'Pending' && !visited);
+          (selectedFilter == 'Visited' && place.visited) ||
+          (selectedFilter == 'Pending' && !place.visited);
 
       return matchesSearch && matchesFilter;
     }).toList();
-  }
-
-  int get visitedCount {
-    return places.where(
-      (place) => place['visited'] == true,
-    ).length;
   }
 
   // ==========================================================
@@ -216,8 +164,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final progress =
-        places.isEmpty ? 0.0 : visitedCount / places.length;
+    final progress = tripData.progress;
 
     return Scaffold(
       appBar: AppBar(
@@ -228,23 +175,19 @@ class _PlacesScreenState extends State<PlacesScreen> {
             fontSize: 22,
           ),
         ),
-
         actions: [
           Container(
             margin: const EdgeInsets.only(right: 16),
-
             padding: const EdgeInsets.symmetric(
               horizontal: 12,
               vertical: 7,
             ),
-
             decoration: BoxDecoration(
               color: const Color(0xFFE0EAFF),
               borderRadius: BorderRadius.circular(20),
             ),
-
             child: Text(
-              '${places.length} Places',
+              '${tripData.totalPlaces} Places',
               style: const TextStyle(
                 color: Color(0xFF2563EB),
                 fontWeight: FontWeight.w700,
@@ -254,15 +197,11 @@ class _PlacesScreenState extends State<PlacesScreen> {
           ),
         ],
       ),
-
       floatingActionButton: FloatingActionButton.extended(
         onPressed: addPlace,
-
         backgroundColor: const Color(0xFF2563EB),
         foregroundColor: Colors.white,
-
         icon: const Icon(Icons.add_rounded),
-
         label: const Text(
           'Add Place',
           style: TextStyle(
@@ -270,17 +209,12 @@ class _PlacesScreenState extends State<PlacesScreen> {
           ),
         ),
       ),
-
       body: LayoutBuilder(
         builder: (context, constraints) {
           final isWide = constraints.maxWidth >= 700;
 
           return Column(
             children: [
-              // =================================================
-              // PROGRESS
-              // =================================================
-
               Padding(
                 padding: EdgeInsets.fromLTRB(
                   isWide ? 30 : 20,
@@ -288,39 +222,28 @@ class _PlacesScreenState extends State<PlacesScreen> {
                   isWide ? 30 : 20,
                   12,
                 ),
-
                 child: _progressCard(progress),
               ),
-
-              // =================================================
-              // SEARCH
-              // =================================================
 
               Padding(
                 padding: EdgeInsets.symmetric(
                   horizontal: isWide ? 30 : 20,
                 ),
-
                 child: TextField(
                   controller: searchController,
-
                   onChanged: (_) {
                     setState(() {});
                   },
-
                   decoration: InputDecoration(
                     hintText: 'Search places...',
-
                     prefixIcon: const Icon(
                       Icons.search_rounded,
                     ),
-
                     suffixIcon:
                         searchController.text.isNotEmpty
                             ? IconButton(
                                 onPressed: () {
                                   searchController.clear();
-
                                   setState(() {});
                                 },
                                 icon: const Icon(
@@ -334,19 +257,13 @@ class _PlacesScreenState extends State<PlacesScreen> {
 
               const SizedBox(height: 12),
 
-              // =================================================
-              // WRAP FILTERS
-              // =================================================
-
               Padding(
                 padding: EdgeInsets.symmetric(
                   horizontal: isWide ? 30 : 20,
                 ),
-
                 child: Wrap(
                   spacing: 8,
                   runSpacing: 8,
-
                   children: [
                     _filterChip('All'),
                     _filterChip('Visited'),
@@ -356,10 +273,6 @@ class _PlacesScreenState extends State<PlacesScreen> {
               ),
 
               const SizedBox(height: 12),
-
-              // =================================================
-              // RESPONSIVE LIST
-              // =================================================
 
               Expanded(
                 child: filteredPlaces.isEmpty
@@ -376,48 +289,43 @@ class _PlacesScreenState extends State<PlacesScreen> {
   }
 
   // ==========================================================
-  // MOBILE LIST
+  // MOBILE
   // ==========================================================
 
   Widget _mobilePlacesLayout() {
     return ListView.builder(
       physics: const BouncingScrollPhysics(),
-
       padding: const EdgeInsets.fromLTRB(
         20,
         8,
         20,
         100,
       ),
-
       itemCount: filteredPlaces.length,
-
       itemBuilder: (context, index) {
         final place = filteredPlaces[index];
 
         return _placeCard(
           place,
-          places.indexOf(place),
+          tripData.places.indexOf(place),
         );
       },
     );
   }
 
   // ==========================================================
-  // TABLET / DESKTOP GRID
+  // TABLET / DESKTOP
   // ==========================================================
 
   Widget _widePlacesLayout() {
     return GridView.builder(
       physics: const BouncingScrollPhysics(),
-
       padding: const EdgeInsets.fromLTRB(
         30,
         8,
         30,
         100,
       ),
-
       gridDelegate:
           const SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: 450,
@@ -425,30 +333,26 @@ class _PlacesScreenState extends State<PlacesScreen> {
         crossAxisSpacing: 14,
         childAspectRatio: 2.7,
       ),
-
       itemCount: filteredPlaces.length,
-
       itemBuilder: (context, index) {
         final place = filteredPlaces[index];
 
         return _placeCard(
           place,
-          places.indexOf(place),
+          tripData.places.indexOf(place),
         );
       },
     );
   }
 
   // ==========================================================
-  // PROGRESS CARD
+  // PROGRESS
   // ==========================================================
 
   Widget _progressCard(double progress) {
     return Container(
       width: double.infinity,
-
       padding: const EdgeInsets.all(18),
-
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [
@@ -456,16 +360,13 @@ class _PlacesScreenState extends State<PlacesScreen> {
             Color(0xFF2563EB),
           ],
         ),
-
         borderRadius: BorderRadius.circular(22),
       ),
-
       child: Column(
         children: [
           Row(
             mainAxisAlignment:
                 MainAxisAlignment.spaceBetween,
-
             children: [
               const Text(
                 'Trip Progress',
@@ -474,7 +375,6 @@ class _PlacesScreenState extends State<PlacesScreen> {
                   fontWeight: FontWeight.w700,
                 ),
               ),
-
               Text(
                 '${(progress * 100).round()}%',
                 style: const TextStyle(
@@ -490,14 +390,11 @@ class _PlacesScreenState extends State<PlacesScreen> {
 
           ClipRRect(
             borderRadius: BorderRadius.circular(20),
-
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 9,
-
               backgroundColor:
-                  Colors.white.withOpacity(0.2),
-
+                  Colors.white.withValues(alpha: 0.2),
               valueColor:
                   const AlwaysStoppedAnimation<Color>(
                 Colors.white,
@@ -509,10 +406,8 @@ class _PlacesScreenState extends State<PlacesScreen> {
 
           Align(
             alignment: Alignment.centerLeft,
-
             child: Text(
-              '$visitedCount of ${places.length} places visited',
-
+              '${tripData.visitedCount} of ${tripData.totalPlaces} places visited',
               style: const TextStyle(
                 color: Colors.white70,
                 fontSize: 12,
@@ -525,7 +420,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
   }
 
   // ==========================================================
-  // FILTER
+  // FILTER CHIP
   // ==========================================================
 
   Widget _filterChip(String title) {
@@ -533,27 +428,20 @@ class _PlacesScreenState extends State<PlacesScreen> {
 
     return ChoiceChip(
       label: Text(title),
-
       selected: selected,
-
       onSelected: (_) {
         setState(() {
           selectedFilter = title;
         });
       },
-
       selectedColor: const Color(0xFF2563EB),
-
       backgroundColor: Colors.white,
-
       labelStyle: TextStyle(
         color: selected
             ? Colors.white
             : const Color(0xFF475569),
-
         fontWeight: FontWeight.w600,
       ),
-
       side: BorderSide.none,
     );
   }
@@ -563,117 +451,84 @@ class _PlacesScreenState extends State<PlacesScreen> {
   // ==========================================================
 
   Widget _placeCard(
-    Map<String, dynamic> place,
+    TripPlace place,
     int index,
   ) {
-    final visited = place['visited'] == true;
-
-    final Color color = place['color'];
+    final visited = place.visited;
 
     return Dismissible(
-      key: ValueKey(
-        '${place['name']}_$index',
-      ),
-
+      key: ValueKey('${place.name}_$index'),
       direction: DismissDirection.endToStart,
-
       background: Container(
-        margin: const EdgeInsets.only(
-          bottom: 12,
-        ),
-
+        margin: const EdgeInsets.only(bottom: 12),
         alignment: Alignment.centerRight,
-
-        padding: const EdgeInsets.only(
-          right: 25,
-        ),
-
+        padding: const EdgeInsets.only(right: 25),
         decoration: BoxDecoration(
           color: const Color(0xFFEF4444),
           borderRadius: BorderRadius.circular(20),
         ),
-
         child: const Icon(
           Icons.delete_outline_rounded,
           color: Colors.white,
           size: 28,
         ),
       ),
-
       onDismissed: (_) {
         deletePlace(index);
       },
-
       child: Container(
-        margin: const EdgeInsets.only(
-          bottom: 12,
-        ),
-
+        margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.035),
+              color: Colors.black.withValues(alpha: 0.035),
               blurRadius: 12,
               offset: const Offset(0, 5),
             ),
           ],
         ),
-
         child: CheckboxListTile(
           value: visited,
-
           onChanged: (value) {
-            setState(() {
-              places[index]['visited'] =
-                  value ?? false;
-            });
+            tripData.toggleVisited(
+              index,
+              value ?? false,
+            );
           },
-
           activeColor: const Color(0xFF10B981),
-
           secondary: Container(
             padding: const EdgeInsets.all(11),
-
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: place.color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(14),
             ),
-
             child: Icon(
-              place['icon'],
-              color: color,
+              place.icon,
+              color: place.color,
             ),
           ),
-
           title: Text(
-            place['name'],
-
+            place.name,
             style: TextStyle(
               fontWeight: FontWeight.w700,
-
               color: visited
                   ? const Color(0xFF94A3B8)
                   : const Color(0xFF0F172A),
-
               decoration: visited
                   ? TextDecoration.lineThrough
                   : TextDecoration.none,
             ),
           ),
-
           subtitle: Text(
             visited
                 ? '✓ Completed'
                 : 'Ready to explore',
-
             style: TextStyle(
               color: visited
                   ? const Color(0xFF10B981)
                   : const Color(0xFF64748B),
-
               fontSize: 12,
             ),
           ),
@@ -683,7 +538,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
   }
 
   // ==========================================================
-  // EMPTY STATE
+  // EMPTY
   // ==========================================================
 
   Widget _emptyState() {
@@ -691,16 +546,13 @@ class _PlacesScreenState extends State<PlacesScreen> {
       child: Column(
         mainAxisAlignment:
             MainAxisAlignment.center,
-
         children: [
           Container(
             padding: const EdgeInsets.all(22),
-
             decoration: const BoxDecoration(
               color: Color(0xFFEFF4FF),
               shape: BoxShape.circle,
             ),
-
             child: const Icon(
               Icons.travel_explore_rounded,
               size: 45,
@@ -712,7 +564,6 @@ class _PlacesScreenState extends State<PlacesScreen> {
 
           const Text(
             'No places found',
-
             style: TextStyle(
               fontSize: 19,
               fontWeight: FontWeight.w800,

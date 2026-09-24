@@ -22,14 +22,14 @@ class TravelPlannerApp extends StatelessWidget {
 
         scaffoldBackgroundColor: const Color(0xFFF6F8FC),
 
-        colorScheme: ColorScheme.light(
-          primary: const Color(0xFF2563EB),
+        colorScheme: const ColorScheme.light(
+          primary: Color(0xFF2563EB),
           onPrimary: Colors.white,
-          secondary: const Color(0xFF06B6D4),
+          secondary: Color(0xFF06B6D4),
           onSecondary: Colors.white,
           surface: Colors.white,
-          onSurface: const Color(0xFF0F172A),
-          error: const Color(0xFFEF4444),
+          onSurface: Color(0xFF0F172A),
+          error: Color(0xFFEF4444),
           onError: Colors.white,
         ),
 
@@ -78,23 +78,25 @@ class TravelPlannerApp extends StatelessWidget {
           surfaceTintColor: Colors.transparent,
           elevation: 10,
           indicatorColor: const Color(0xFFE0EAFF),
-
           labelTextStyle: WidgetStateProperty.resolveWith(
             (states) {
+              final selected =
+                  states.contains(WidgetState.selected);
+
               return TextStyle(
-                color: states.contains(WidgetState.selected)
+                color: selected
                     ? const Color(0xFF2563EB)
                     : const Color(0xFF64748B),
-                fontWeight: states.contains(WidgetState.selected)
-                    ? FontWeight.w700
-                    : FontWeight.w500,
+                fontWeight:
+                    selected ? FontWeight.w700 : FontWeight.w500,
                 fontSize: 12,
               );
             },
           ),
         ),
 
-        navigationRailTheme: const NavigationRailThemeData(
+        navigationRailTheme:
+            const NavigationRailThemeData(
           backgroundColor: Colors.white,
           selectedIconTheme: IconThemeData(
             color: Color(0xFF2563EB),
@@ -141,10 +143,10 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     // MEDIAQUERY
-    // We use MediaQuery to obtain the current screen width.
-    final screenWidth = MediaQuery.of(context).size.width;
+    final width = MediaQuery.of(context).size.width;
 
-    final isWideScreen = screenWidth >= 600;
+    final isMobile = width < 600;
+    final isDesktop = width >= 1000;
 
     return Scaffold(
       body: Row(
@@ -153,7 +155,7 @@ class _MainScreenState extends State<MainScreen> {
           // TABLET / DESKTOP NAVIGATION
           // ===================================================
 
-          if (isWideScreen)
+          if (!isMobile)
             NavigationRail(
               selectedIndex: selectedIndex,
 
@@ -163,7 +165,7 @@ class _MainScreenState extends State<MainScreen> {
                 });
               },
 
-              extended: screenWidth >= 1000,
+              extended: isDesktop,
 
               backgroundColor: Colors.white,
 
@@ -172,6 +174,7 @@ class _MainScreenState extends State<MainScreen> {
                   top: 20,
                   bottom: 25,
                 ),
+
                 child: Column(
                   children: [
                     Container(
@@ -179,7 +182,8 @@ class _MainScreenState extends State<MainScreen> {
 
                       decoration: BoxDecoration(
                         color: const Color(0xFFE0EAFF),
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius:
+                            BorderRadius.circular(14),
                       ),
 
                       child: const Icon(
@@ -188,7 +192,7 @@ class _MainScreenState extends State<MainScreen> {
                       ),
                     ),
 
-                    if (screenWidth >= 1000) ...[
+                    if (isDesktop) ...[
                       const SizedBox(height: 8),
 
                       const Text(
@@ -206,18 +210,22 @@ class _MainScreenState extends State<MainScreen> {
               destinations: const [
                 NavigationRailDestination(
                   icon: Icon(Icons.home_outlined),
-                  selectedIcon: Icon(Icons.home_rounded),
+                  selectedIcon:
+                      Icon(Icons.home_rounded),
                   label: Text('Home'),
                 ),
 
                 NavigationRailDestination(
                   icon: Icon(Icons.explore_outlined),
-                  selectedIcon: Icon(Icons.explore_rounded),
+                  selectedIcon:
+                      Icon(Icons.explore_rounded),
                   label: Text('Places'),
                 ),
 
                 NavigationRailDestination(
-                  icon: Icon(Icons.location_on_outlined),
+                  icon: Icon(
+                    Icons.location_on_outlined,
+                  ),
                   selectedIcon: Icon(
                     Icons.location_on_rounded,
                   ),
@@ -227,7 +235,7 @@ class _MainScreenState extends State<MainScreen> {
             ),
 
           // ===================================================
-          // CONTENT
+          // SCREEN CONTENT
           // ===================================================
 
           Expanded(
@@ -243,9 +251,8 @@ class _MainScreenState extends State<MainScreen> {
       // MOBILE NAVIGATION
       // =====================================================
 
-      bottomNavigationBar: isWideScreen
-          ? null
-          : NavigationBar(
+      bottomNavigationBar: isMobile
+          ? NavigationBar(
               selectedIndex: selectedIndex,
 
               onDestinationSelected: (index) {
@@ -256,14 +263,20 @@ class _MainScreenState extends State<MainScreen> {
 
               destinations: const [
                 NavigationDestination(
-                  icon: Icon(Icons.home_outlined),
-                  selectedIcon: Icon(Icons.home_rounded),
+                  icon: Icon(
+                    Icons.home_outlined,
+                  ),
+                  selectedIcon:
+                      Icon(Icons.home_rounded),
                   label: 'Home',
                 ),
 
                 NavigationDestination(
-                  icon: Icon(Icons.explore_outlined),
-                  selectedIcon: Icon(Icons.explore_rounded),
+                  icon: Icon(
+                    Icons.explore_outlined,
+                  ),
+                  selectedIcon:
+                      Icon(Icons.explore_rounded),
                   label: 'Places',
                 ),
 
@@ -277,7 +290,8 @@ class _MainScreenState extends State<MainScreen> {
                   label: 'Tracker',
                 ),
               ],
-            ),
+            )
+          : null,
     );
   }
 }

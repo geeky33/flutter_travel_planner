@@ -1,149 +1,305 @@
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart';
 
-class TrackerScreen extends StatelessWidget {
+import '../data/trip_data.dart';
+
+class TrackerScreen extends StatefulWidget {
   const TrackerScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final screenWidth =
-        MediaQuery.of(context).size.width;
+  State<TrackerScreen> createState() => _TrackerScreenState();
+}
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Trip Tracker',
-          style: TextStyle(
-            fontWeight: FontWeight.w800,
-            fontSize: 22,
+class _TrackerScreenState extends State<TrackerScreen> {
+  final TripData tripData = TripData.instance;
+
+  GoogleMapController? mapController;
+
+  LatLng? currentLocation;
+
+  bool isLoading = true;
+  String locationMessage = 'Getting your location...';
+
+  @override
+  void initState() {
+    super.initState();
+
+    tripData.addListener(_onTripDataChanged);
+
+    _getCurrentLocation();
+  }
+
+  @override
+  void dispose() {
+    tripData.removeListener(_onTripDataChanged);
+    mapController?.dispose();
+    super.dispose();
+  }
+
+  void _onTripDataChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  // ==========================================================
+  // CURRENT LOCATION
+  // ==========================================================
+
+  Future<void> _getCurrentLocation() async {
+    try {
+      final serviceEnabled =
+          await Geolocator.isLocationServiceEnabled();
+
+      if (!serviceEnabled) {
+        setState(() {
+          isLoading = false;
+          locationMessage =
+              'Location services are disabled.';
+        });
+        return;
+      }
+
+      LocationPermission permission =
+          await Geolocator.checkPermission();
+
+      if (permission == LocationPermission.denied) {
+        permission =
+            await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.denied) {
+        setState(() {
+          isLoading = false;
+          locationMessage =
+              'Location permission denied.';
+        });
+        return;
+      }
+
+      if (permission ==
+          LocationPermission.deniedForever) {
+        setState(() {
+          isLoading = false;
+          locationMessage =
+              'Location permission permanently denied.';
+        });
+        return;
+      }
+
+      final position =
+          await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
+      );
+
+      final location = LatLng(
+        position.latitude,
+        position.longitude,
+      );
+
+      setState(() {
+        currentLocation = location;
+        isLoading = false;
+        locationMessage = 'Location found';
+      });
+
+      mapController?.animateCamera(
+        CameraUpdate.newLatLngZoom(
+          location,
+          11.5,
+        ),
+      );
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+        locationMessage =
+            'Unable to get your location.';
+      });
+    }
+  }
+
+  // ==========================================================
+  // MARKERS
+  // ==========================================================
+
+  Set<Marker> _buildMarkers() {
+    final markers = <Marker>{};
+
+    // --------------------------------------------------------
+    // CURRENT LOCATION
+    // --------------------------------------------------------
+
+    if (currentLocation != null) {
+      markers.add(
+        Marker(
+          markerId:
+              const MarkerId('current_location'),
+          position: currentLocation!,
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueAzure,
+          ),
+          infoWindow: const InfoWindow(
+            title: 'Your Current Location',
           ),
         ),
+      );
+    }
 
-        actions: [
-          Container(
-            margin: const EdgeInsets.only(
-              right: 16,
+    // --------------------------------------------------------
+    // DESTINATION MARKERS
+    // --------------------------------------------------------
+
+    for (final place in tripData.places) {
+      // Places added manually don't have coordinates yet.
+      if (place.latitude == 0 ||
+          place.longitude == 0) {
+        continue;
+      }
+
+      markers.add(
+        Marker(
+          markerId: MarkerId(place.name),
+          position: LatLng(
+            place.latitude,
+            place.longitude,
+          ),
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            place.visited
+                ? BitmapDescriptor.hueGreen
+                : BitmapDescriptor.hueRed,
+          ),
+          infoWindow: InfoWindow(
+            title: place.name,
+            snippet: place.visited
+                ? '✓ Completed'
+                : 'Ready to explore',
+          ),
+        ),
+      );
+    }
+
+    return markers;
+  }
+
+  // ==========================================================
+  // RECENTER
+  // ==========================================================
+
+  void _recenter() {
+    if (currentLocation == null ||
+        mapController == null) {
+      return;
+    }
+
+    mapController!.animateCamera(
+      CameraUpdate.newLatLngZoom(
+        currentLocation!,
+        12.5,
+      ),
+    );
+  }
+
+  // ==========================================================
+  // MAP
+  // ==========================================================
+
+  Widget _map() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: Stack(
+        children: [
+          GoogleMap(
+            initialCameraPosition:
+                const CameraPosition(
+              target: LatLng(
+                15.4909,
+                73.8278,
+              ),
+              zoom: 10.5,
             ),
+            onMapCreated: (controller) {
+              mapController = controller;
+            },
+            markers: _buildMarkers(),
+            myLocationEnabled: false,
+            myLocationButtonEnabled: false,
+            zoomControlsEnabled: false,
+            compassEnabled: true,
+            mapToolbarEnabled: true,
+          ),
 
-            padding: const EdgeInsets.symmetric(
-              horizontal: 11,
-              vertical: 7,
-            ),
+          // --------------------------------------------------
+          // LIVE LOCATION LABEL
+          // --------------------------------------------------
 
-            decoration: BoxDecoration(
-              color: const Color(0xFFE9FBF4),
-              borderRadius: BorderRadius.circular(20),
-            ),
-
-            child: const Row(
-              children: [
-                Icon(
-                  Icons.circle,
-                  color: Color(0xFF10B981),
-                  size: 8,
-                ),
-
-                SizedBox(width: 6),
-
-                Text(
-                  'ACTIVE',
-                  style: TextStyle(
-                    color: Color(0xFF059669),
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
+          Positioned(
+            top: 14,
+            left: 14,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 9,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius:
+                    BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(
+                      alpha: 0.10,
+                    ),
+                    blurRadius: 10,
                   ),
-                ),
-              ],
+                ],
+              ),
+              child: Row(
+                mainAxisSize:
+                    MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration:
+                        const BoxDecoration(
+                      color: Color(0xFF10B981),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 7),
+                  const Text(
+                    'Live Location',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // --------------------------------------------------
+          // RECENTER
+          // --------------------------------------------------
+
+          Positioned(
+            right: 14,
+            bottom: 14,
+            child: FloatingActionButton(
+              mini: true,
+              backgroundColor: Colors.white,
+              foregroundColor:
+                  const Color(0xFF2563EB),
+              onPressed: _recenter,
+              child: const Icon(
+                Icons.my_location_rounded,
+              ),
             ),
           ),
         ],
-      ),
-
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final isWide = constraints.maxWidth >= 700;
-
-          return OrientationBuilder(
-            builder: (context, orientation) {
-              final isLandscape =
-                  orientation == Orientation.landscape;
-
-              return SingleChildScrollView(
-                physics:
-                    const BouncingScrollPhysics(),
-
-                padding: EdgeInsets.all(
-                  isWide ? 30 : 20,
-                ),
-
-                child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
-
-                  children: [
-                    const Text(
-                      'Where are you now?',
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: Color(0xFF64748B),
-                      ),
-                    ),
-
-                    const SizedBox(height: 5),
-
-                    const Text(
-                      'Current Location',
-                      style: TextStyle(
-                        fontSize: 27,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF0F172A),
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // =================================================
-                    // RESPONSIVE ORIENTATION LAYOUT
-                    // =================================================
-
-                    if (isLandscape || isWide)
-                      Row(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
-
-                        children: [
-                          Expanded(
-                            flex: 3,
-                            child: _locationCard(),
-                          ),
-
-                          const SizedBox(width: 20),
-
-                          Expanded(
-                            flex: 2,
-                            child: _progressCard(),
-                          ),
-                        ],
-                      )
-                    else
-                      Column(
-                        children: [
-                          _locationCard(),
-
-                          const SizedBox(height: 25),
-
-                          _progressCard(),
-                        ],
-                      ),
-
-                    const SizedBox(height: 28),
-
-                    _nextDestination(),
-                  ],
-                ),
-              );
-            },
-          );
-        },
       ),
     );
   }
@@ -154,189 +310,117 @@ class TrackerScreen extends StatelessWidget {
 
   Widget _locationCard() {
     return Container(
-      width: double.infinity,
-      height: 300,
-
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            Color(0xFF0F172A),
-            Color(0xFF1E3A8A),
-            Color(0xFF2563EB),
-          ],
-
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-
-        borderRadius: BorderRadius.circular(28),
-
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1E3A8A)
-                .withOpacity(0.25),
-
-            blurRadius: 25,
-
-            offset: const Offset(0, 12),
+            color: Colors.black.withValues(
+              alpha: 0.04,
+            ),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
-
-      child: Stack(
+      child: Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
         children: [
-          Positioned(
-            right: -50,
-            top: -50,
-
-            child: Container(
-              width: 170,
-              height: 170,
-
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color:
-                    Colors.white.withOpacity(0.05),
-              ),
+          const Text(
+            'Current Location',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
             ),
           ),
 
-          Positioned(
-            left: -70,
-            bottom: -70,
+          const SizedBox(height: 5),
 
-            child: Container(
-              width: 190,
-              height: 190,
-
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color:
-                    Colors.cyan.withOpacity(0.05),
-              ),
+          Text(
+            isLoading
+                ? 'Getting your location...'
+                : locationMessage,
+            style: const TextStyle(
+              color: Color(0xFF64748B),
             ),
           ),
 
-          Padding(
-            padding: const EdgeInsets.all(24),
+          const SizedBox(height: 18),
 
-            child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
-
-              children: [
-                const Text(
-                  'YOU ARE CURRENTLY IN',
-                  style: TextStyle(
-                    color: Colors.white60,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                const Text(
-                  'Goa',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 36,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-
-                const Text(
-                  'India 🇮🇳',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 15,
-                  ),
-                ),
-
-                const Spacer(),
-
-                Container(
-                  padding: const EdgeInsets.all(14),
-
-                  decoration: BoxDecoration(
-                    color:
-                        Colors.white.withOpacity(0.1),
-                    borderRadius:
-                        BorderRadius.circular(16),
+          if (currentLocation != null)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF4FF),
+                borderRadius:
+                    BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.all(10),
+                    decoration:
+                        const BoxDecoration(
+                      color: Color(0xFFE0EAFF),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.my_location_rounded,
+                      color: Color(0xFF2563EB),
+                    ),
                   ),
 
-                  child: const Row(
+                  const SizedBox(width: 12),
+
+                  Column(
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        Icons.gps_fixed_rounded,
-                        color: Colors.cyanAccent,
-                        size: 20,
+                      const Text(
+                        'GPS Coordinates',
+                        style: TextStyle(
+                          color: Color(0xFF64748B),
+                          fontSize: 12,
+                        ),
                       ),
 
-                      SizedBox(width: 10),
+                      const SizedBox(height: 4),
 
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment:
-                              CrossAxisAlignment.start,
-
-                          children: [
-                            Text(
-                              'GPS Coordinates',
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 11,
-                              ),
-                            ),
-
-                            SizedBox(height: 3),
-
-                            Text(
-                              '15.2993° N, 74.1240° E',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight:
-                                    FontWeight.w700,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ],
+                      Text(
+                        '${currentLocation!.latitude.toStringAsFixed(5)}°, '
+                        '${currentLocation!.longitude.toStringAsFixed(5)}°',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ],
                   ),
-                ),
-              ],
+                ],
+              ),
+            ),
+
+          const SizedBox(height: 18),
+
+          const Text(
+            'Map Controls',
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 16,
             ),
           ),
 
-          Positioned(
-            right: 25,
-            top: 25,
+          const SizedBox(height: 6),
 
-            child: Container(
-              padding: const EdgeInsets.all(13),
-
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-
-                boxShadow: [
-                  BoxShadow(
-                    color:
-                        Colors.black.withOpacity(0.15),
-                    blurRadius: 15,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-
-              child: const Icon(
-                Icons.location_on_rounded,
-                color: Color(0xFFEF4444),
-                size: 30,
-              ),
+          const Text(
+            'Pan and zoom the map to explore destinations. '
+            'Tap a marker to view trip details.',
+            style: TextStyle(
+              color: Color(0xFF64748B),
+              fontSize: 12,
             ),
           ),
         ],
@@ -345,184 +429,263 @@ class TrackerScreen extends StatelessWidget {
   }
 
   // ==========================================================
-  // PROGRESS CARD
+  // TRIP PROGRESS
   // ==========================================================
 
   Widget _progressCard() {
+    final progress = tripData.progress;
+    final next = tripData.nextDestination;
+
     return Container(
-      width: double.infinity,
-
       padding: const EdgeInsets.all(20),
-
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.035),
-            blurRadius: 12,
+            color: Colors.black.withValues(
+              alpha: 0.04,
+            ),
+            blurRadius: 15,
             offset: const Offset(0, 5),
           ),
         ],
       ),
-
       child: Column(
         crossAxisAlignment:
             CrossAxisAlignment.start,
-
         children: [
           const Text(
             'Trip Progress',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w800,
-              color: Color(0xFF0F172A),
             ),
           ),
 
           const SizedBox(height: 5),
 
           const Text(
-            'You are making great progress!',
+            'Your journey at a glance',
             style: TextStyle(
-              fontSize: 13,
               color: Color(0xFF64748B),
             ),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
 
           Row(
             mainAxisAlignment:
                 MainAxisAlignment.spaceBetween,
-
             children: [
-              const Text(
-                'Places visited',
-                style: TextStyle(
+              Text(
+                '${tripData.visitedCount} of '
+                '${tripData.totalPlaces} places visited',
+                style: const TextStyle(
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF334155),
                 ),
               ),
 
-              const Text(
-                '40%',
-                style: TextStyle(
-                  fontSize: 20,
+              Text(
+                '${(progress * 100).round()}%',
+                style: const TextStyle(
+                  color: Color(0xFF2563EB),
                   fontWeight: FontWeight.w800,
                 ),
               ),
             ],
           ),
 
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
 
           ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-
-            child: const LinearProgressIndicator(
-              value: 0.4,
-              minHeight: 10,
-
+            borderRadius:
+                BorderRadius.circular(20),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 9,
               backgroundColor:
-                  Color(0xFFE2E8F0),
-
+                  const Color(0xFFE2E8F0),
               valueColor:
-                  AlwaysStoppedAnimation<Color>(
-                Color(0xFF10B981),
+                  const AlwaysStoppedAnimation<Color>(
+                Color(0xFF2563EB),
               ),
             ),
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 18),
 
-          const Text(
-            '2 of 5 places visited',
-            style: TextStyle(
-              color: Color(0xFF64748B),
-              fontSize: 12,
+          if (next != null)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius:
+                    BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: next.color.withValues(
+                        alpha: 0.1,
+                      ),
+                      borderRadius:
+                          BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      next.icon,
+                      color: next.color,
+                    ),
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Next Destination',
+                          style: TextStyle(
+                            color:
+                                Color(0xFF64748B),
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          next.name,
+                          style: const TextStyle(
+                            fontWeight:
+                                FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            const Text(
+              '🎉 All destinations completed!',
+              style: TextStyle(
+                color: Color(0xFF10B981),
+                fontWeight: FontWeight.w700,
+              ),
             ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // FLEXIBLE / EXPANDED ROW
-          Row(
-            children: [
-              Expanded(
-                child: _miniStat(
-                  'Days',
-                  '4',
-                  Icons.calendar_month_rounded,
-                  const Color(0xFF8B5CF6),
-                ),
-              ),
-
-              const SizedBox(width: 10),
-
-              Expanded(
-                child: _miniStat(
-                  'Visited',
-                  '2',
-                  Icons.check_circle_rounded,
-                  const Color(0xFF10B981),
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );
   }
 
   // ==========================================================
-  // MINI STAT
+  // RESPONSIVE CONTENT
   // ==========================================================
 
-  Widget _miniStat(
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(12),
+  Widget _content() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth >= 900;
 
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(14),
-      ),
+        return OrientationBuilder(
+          builder: (context, orientation) {
+            final isLandscape =
+                orientation ==
+                    Orientation.landscape;
 
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            color: color,
-            size: 20,
-          ),
-
-          const SizedBox(width: 8),
-
-          Flexible(
-            child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
-
-              children: [
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 16,
+            if (isWide || isLandscape) {
+              return Row(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: _map(),
                   ),
-                ),
+                  const SizedBox(width: 18),
+                  Expanded(
+                    flex: 2,
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          _locationCard(),
+                          const SizedBox(height: 18),
+                          _progressCard(),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            }
 
+            return Column(
+              children: [
+                Expanded(
+                  flex: 5,
+                  child: _map(),
+                ),
+                const SizedBox(height: 16),
+                _locationCard(),
+                const SizedBox(height: 16),
+                _progressCard(),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // ==========================================================
+  // BUILD
+  // ==========================================================
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Trip Tracker',
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+            fontSize: 22,
+          ),
+        ),
+        actions: [
+          Container(
+            margin:
+                const EdgeInsets.only(right: 16),
+            padding:
+                const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 7,
+            ),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE8FFF5),
+              borderRadius:
+                  BorderRadius.circular(20),
+            ),
+            child: const Row(
+              children: [
+                Icon(
+                  Icons.circle,
+                  size: 8,
+                  color: Color(0xFF10B981),
+                ),
+                SizedBox(width: 6),
                 Text(
-                  title,
-                  style: const TextStyle(
-                    color: Color(0xFF64748B),
-                    fontSize: 10,
+                  'ACTIVE',
+                  style: TextStyle(
+                    color: Color(0xFF059669),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
                   ),
                 ),
               ],
@@ -530,113 +693,15 @@ class TrackerScreen extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  // ==========================================================
-  // NEXT DESTINATION
-  // ==========================================================
-
-  Widget _nextDestination() {
-    return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
-
-      children: [
-        const Text(
-          'Next Destination',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w800,
-            color: Color(0xFF0F172A),
-          ),
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          16,
+          0,
+          16,
+          16,
         ),
-
-        const SizedBox(height: 5),
-
-        const Text(
-          'Your upcoming stop',
-          style: TextStyle(
-            fontSize: 13,
-            color: Color(0xFF64748B),
-          ),
-        ),
-
-        const SizedBox(height: 14),
-
-        Container(
-          padding: const EdgeInsets.all(16),
-
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-
-            boxShadow: [
-              BoxShadow(
-                color:
-                    Colors.black.withOpacity(0.035),
-                blurRadius: 12,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(13),
-
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEFF4FF),
-                  borderRadius:
-                      BorderRadius.circular(15),
-                ),
-
-                child: const Icon(
-                  Icons.castle_rounded,
-                  color: Color(0xFF2563EB),
-                ),
-              ),
-
-              const SizedBox(width: 14),
-
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
-
-                  children: [
-                    Text(
-                      'Fort Aguada',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF0F172A),
-                      ),
-                    ),
-
-                    SizedBox(height: 5),
-
-                    Text(
-                      'Next stop • 11:00 AM',
-                      style: TextStyle(
-                        color: Color(0xFF64748B),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 14,
-                color: Color(0xFF64748B),
-              ),
-            ],
-          ),
-        ),
-      ],
+        child: _content(),
+      ),
     );
   }
 }
