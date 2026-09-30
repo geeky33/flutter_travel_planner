@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 
+import 'dom/dom_helper.dart';
 import 'screens/home_screen.dart';
 import 'screens/places_screen.dart';
 import 'screens/tracker_screen.dart';
 
 void main() {
+  // Experiment 5: Dart DOM manipulation
+  DomHelper.setPageTitle('TravelMate - Dart DOM Application');
+
   runApp(const TravelPlannerApp());
 }
 
@@ -140,6 +144,23 @@ class _MainScreenState extends State<MainScreen> {
     TrackerScreen(),
   ];
 
+  void _handleNavigation(int index) {
+    setState(() {
+      selectedIndex = index;
+    });
+
+    const names = [
+      'Home',
+      'Places',
+      'Tracker',
+    ];
+
+    // Experiment 5: DOM event handling
+    DomHelper.updateStatus(
+      'DOM Event: ${names[index]} selected',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // MEDIAQUERY
@@ -159,11 +180,7 @@ class _MainScreenState extends State<MainScreen> {
             NavigationRail(
               selectedIndex: selectedIndex,
 
-              onDestinationSelected: (index) {
-                setState(() {
-                  selectedIndex = index;
-                });
-              },
+              onDestinationSelected: _handleNavigation,
 
               extended: isDesktop,
 
@@ -255,11 +272,8 @@ class _MainScreenState extends State<MainScreen> {
           ? NavigationBar(
               selectedIndex: selectedIndex,
 
-              onDestinationSelected: (index) {
-                setState(() {
-                  selectedIndex = index;
-                });
-              },
+              onDestinationSelected:
+                  _handleNavigation,
 
               destinations: const [
                 NavigationDestination(

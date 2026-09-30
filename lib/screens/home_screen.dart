@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../dom/dom_helper.dart';
+
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -49,7 +51,11 @@ class HomeScreen extends StatelessWidget {
             ),
 
             child: IconButton(
-              onPressed: () {},
+              onPressed: () {
+                DomHelper.updateStatus(
+                  'Notification button clicked - DOM event detected',
+                );
+              },
 
               icon: const Icon(
                 Icons.notifications_none_rounded,
@@ -99,6 +105,10 @@ class HomeScreen extends StatelessWidget {
           const SizedBox(height: 24),
 
           _tripCard(),
+
+          const SizedBox(height: 24),
+
+          _domDemoCard(),
 
           const SizedBox(height: 28),
 
@@ -171,6 +181,10 @@ class HomeScreen extends StatelessWidget {
           const SizedBox(height: 25),
 
           _tripCard(),
+
+          const SizedBox(height: 24),
+
+          _domDemoCard(),
 
           const SizedBox(height: 28),
 
@@ -308,6 +322,10 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
 
+              const SizedBox(height: 24),
+
+              _domDemoCard(),
+
               const SizedBox(height: 35),
 
               _sectionTitle(
@@ -360,6 +378,152 @@ class HomeScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  // ==========================================================
+  // DOM DEMO CARD
+  // ==========================================================
+
+  Widget _domDemoCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+
+        border: Border.all(
+          color: const Color(0xFFE0EAFF),
+        ),
+
+        boxShadow: [
+          BoxShadow(
+            color:
+                Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+
+      child: Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+
+        children: [
+          Row(
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.all(10),
+
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE0EAFF),
+                  borderRadius:
+                      BorderRadius.circular(12),
+                ),
+
+                child: const Icon(
+                  Icons.code_rounded,
+                  color: Color(0xFF2563EB),
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+
+                  children: [
+                    Text(
+                      'Dart DOM Lab',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+
+                    SizedBox(height: 3),
+
+                    Text(
+                      'Interact with the browser DOM',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 18),
+
+          const Text(
+            'Experiment 5: HTML DOM Application',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF334155),
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+
+            children: [
+              ElevatedButton.icon(
+                onPressed: () {
+                  DomHelper.updateStatus(
+                    'DOM updated successfully from HomeScreen!',
+                  );
+                },
+
+                icon: const Icon(
+                  Icons.edit_rounded,
+                ),
+
+                label: const Text(
+                  'Update DOM',
+                ),
+
+                style: ElevatedButton.styleFrom(
+                  backgroundColor:
+                      const Color(0xFF2563EB),
+                  foregroundColor: Colors.white,
+                ),
+              ),
+
+              OutlinedButton.icon(
+                onPressed: () {
+                  DomHelper.setPageTitle(
+                    'TravelMate • DOM Updated',
+                  );
+
+                  DomHelper.updateStatus(
+                    'Browser page title updated using Dart DOM!',
+                  );
+                },
+
+                icon: const Icon(
+                  Icons.title_rounded,
+                ),
+
+                label: const Text(
+                  'Change Title',
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -457,10 +621,8 @@ class HomeScreen extends StatelessWidget {
               decoration:
                   BoxDecoration(
                 shape: BoxShape.circle,
-                color:
-                    Colors.white.withOpacity(
-                  0.08,
-                ),
+                color: Colors.white
+                    .withValues(alpha: 0.08),
               ),
             ),
           ),
@@ -484,10 +646,8 @@ class HomeScreen extends StatelessWidget {
 
                       decoration:
                           BoxDecoration(
-                        color:
-                            Colors.white.withOpacity(
-                          0.18,
-                        ),
+                        color: Colors.white
+                            .withValues(alpha: 0.18),
 
                         borderRadius:
                             BorderRadius.circular(
@@ -510,10 +670,8 @@ class HomeScreen extends StatelessWidget {
 
                       decoration:
                           BoxDecoration(
-                        color:
-                            Colors.white.withOpacity(
-                          0.15,
-                        ),
+                        color: Colors.white
+                            .withValues(alpha: 0.15),
 
                         borderRadius:
                             BorderRadius.circular(
